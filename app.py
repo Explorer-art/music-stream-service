@@ -14,15 +14,19 @@ from config import *
 init()
 
 app = FastAPI()
-app.mount("static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
 async def home(request: Request):
-	templates.TemplateResponse("index.html", {"request": request})
+	return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/tracks/upload")
+@app.get("/admin")
+async def admin_panel(request: Request):
+	return templates.TemplateResponse("admin.html", {"request": request})
+
+@app.post("/api/tracks/upload")
 async def add_track(file: UploadFile = File(...)):
 	file_content = await file.read()
 	audio_file = eyed3.load(BytesIO(file_content))
@@ -35,17 +39,17 @@ async def add_track(file: UploadFile = File(...)):
 
 	return JSONResponse({"message": "Track added successfully", "track_id": track_id})
 
-@app.post("/tracks/upload")
+@app.post("/api/tracks/upload")
 async def delete_track(track_id: int = Form(...)):
 	return JSONResponse({"message": "Track deleted"})
 
-@app.get("/albums/{track_id}")
+@app.get("/api/albums/{track_id}")
 async def get_track_album(track_id: str):
 	if not os.path.exists(f"{ALBUMS_DIR}/{track_id}.jpg"):
 		return JSONResponse({"message": "Track not found"})
 
 	return FileResponse(f"{ALBUMS_DIR}/{track_dir}.jpg")
 
-@app.get("/tracks/{track_id}/stream")
+@app.get("/api/tracks/{track_id}/stream")
 async def stream_track(track_id: int):
 	return StreamingResponse(iter_audio_file(f"{MUSIC_DIR}/{track_id}.mp3"), media_type="auido/mpeg")
