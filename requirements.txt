@@ -4,5 +4,6 @@ jinja2
 sqlalchemy[asycnio]
 aiosqlite
 eyed3
+Pillow
 python-multipart
 python-dotenv

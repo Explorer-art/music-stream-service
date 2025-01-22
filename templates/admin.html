@@ -8,5 +8,27 @@
 			<input type="file" name="file">
 			<button type="submit">Отправить</button>
 		</form>
+		<form id="delete-track-form">
+			<input id="delete-track-id">
+		<button type="button" id="delete-track-button">Удалить</button>
+		</form>
+
+		<script>
+			document.getElementById("delete-track-button").addEventListener("click", async function() {
+			let trackId = document.getElementById("delete-track-id").value
+
+			const response = await fetch(`http://127.0.0.1:8000/api/tracks/${trackId}`, {
+				method: "DELETE",
+			});
+
+			let responseData = await response.json();
+
+			if (response.ok) {
+				alert(`${responseData.message}`)
+			} else {
+				alert(`${responseData.detail}`);
+			}
+	      });
+	    </script>
 	</body>
 </html>

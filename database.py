@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from config import DATABASE_URL
@@ -13,6 +13,8 @@ class Track(Base):
 	title = Column(String)
 	artist = Column(String)
 	duration = Column(String)
+	download_url = Column(String)
+	downloaded = Column(Boolean)
 	sha256_hash = Column(String, unique=True, nullable=False)
 
 engine = create_async_engine(DATABASE_URL)

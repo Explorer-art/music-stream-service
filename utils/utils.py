@@ -1,5 +1,6 @@
 import eyed3
 import hashlib
+from PIL import Image
 from config import *
 
 def get_sha256_hash_file(filename):
@@ -15,6 +16,11 @@ def get_sha256_hash_file(filename):
 			sha256.update(data)
 
 	return sha256.hexdigest()
+
+def create_thumbnail(file_src, file_dst):
+	image = Image.open(file_src)
+	resized_image = image.resize((300, 300))
+	resized_image.save(file_dst)
 
 def iter_audio_file(filename, chunk_size = 1024 * 1024):
 	with open(filename, "rb") as file:
