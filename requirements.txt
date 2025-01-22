@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 jinja2
-sqlalchemy[asyncio]
+sqlalchemy[asycnio]
 aiosqlite
 eyed3
 python-multipart
