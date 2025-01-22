@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+sqlalchemy[asyncio]
+aiosqlite
+eyed3
+python-multipart
+python-dotenv
