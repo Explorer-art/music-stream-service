@@ -3,6 +3,9 @@ uvicorn
 jinja2
 sqlalchemy[asycnio]
 aiosqlite
+requests
+bs4
+aiohttp
 eyed3
 Pillow
 python-multipart

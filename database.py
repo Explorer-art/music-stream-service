@@ -13,9 +13,17 @@ class Track(Base):
 	title = Column(String)
 	artist = Column(String)
 	duration = Column(String)
-	download_url = Column(String)
-	downloaded = Column(Boolean)
-	sha256_hash = Column(String, unique=True, nullable=False)
+	sha256_hash = Column(String, unique=True)
+
+class TrackPending(Base):
+	__tablename__ = "TracksPending"
+
+	id = Column(Integer, primary_key=True, autoincrement=True)
+	title = Column(String)
+	artist = Column(String)
+	duration = Column(String)
+	image_url = Column(String, unique=True)
+	download_url = Column(String, unique=True)
 
 engine = create_async_engine(DATABASE_URL)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

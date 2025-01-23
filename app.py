@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.responses import FileResponse, JSONResponse
 from database import *
 from manager import *
+from search import *
 from utils.utils import *
 from config import *
 
@@ -15,6 +16,8 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+
+hitmo = Hitmo()
 
 @app.on_event("startup")
 async def startup():
@@ -24,8 +27,11 @@ async def startup():
 	if not os.path.exists(MUSIC_DIR):
 		os.mkdir(MUSIC_DIR)
 
-	if not os.path.exists(ALBUMS_DIR):
-		os.mkdir(ALBUMS_DIR)
+	if not os.path.exists(IMAGES_DIR):
+		os.mkdir(IMAGES_DIR)
+
+	if not os.path.exists(THUMBNAILS_DIR):
+		os.mkdir(THUMBNAILS_DIR)
 
 	await init_db()
 
@@ -36,6 +42,47 @@ async def home(request: Request):
 @app.get("/admin")
 async def admin_panel(request: Request):
 	return templates.TemplateResponse("admin.html", {"request": request})
+
+@app.get("/api/tracks/search")
+async def search(query: str):
+	tracks = await search_tracks(query)
+
+	if tracks is None:
+		return JSONResponse({"message": "Not results"})
+
+	tracks_data = []
+
+	for track in tracks:
+		tracks_data.append({"track_id": track.id,
+			"title": track.title,
+			"artist": track.artist,
+			"duration": track.duration,
+			"thumbnail_url": f"http://{HOST}/api/albums/thumbnails/{track.id}",
+			"image_url": f"http://{HOST}/api/albums/{track.id}",
+			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream",
+			"track_hash": track.sha256_hash})
+
+	tracks = hitmo.search(query)
+	track_pending_data = []
+
+	if tracks is None:
+		return JSONResponse({"tracks": tracks_data, "tracks_pending": track_pending_data})
+
+	for track in tracks:
+		if not await exists_ptrack_by_download_url(track.download_url) and not await exists_ptrack_by_image_url(track.image_url):
+			track_id = await add_ptrack(track.title, track.artist, track.duration, track.image_url, track.download_url)
+
+	tracks = await search_ptracks(query)
+
+	for track in tracks:
+		track_pending_data.append({"track_id": track.id,
+			"title": track.title,
+			"artist": track.artist,
+			"duration": track.duration,
+			"image_url": track.image_url,
+			"stream_url": track.download_url})
+
+	return JSONResponse({"tracks": tracks_data, "tracks_pending": track_pending_data})
 
 @app.post("/api/tracks/upload")
 async def upload_track(file: UploadFile = File(...)):
@@ -63,15 +110,15 @@ async def upload_track(file: UploadFile = File(...)):
 
 		raise HTTPException(detail="Track already added", status_code=400)
 
-	track_id = await add_track(title, artist, f"{minutes:02}:{seconds:02}", "", True, track_hash)
+	track_id = await add_track(title, artist, f"{minutes:02}:{seconds:02}", track_hash)
 
 	os.remove(f"tmp/{tmp_filename}")
 
 	with open(f"{MUSIC_DIR}/{track_id}.mp3", "wb") as file:
 		file.write(file_content)
 
-	add_track_album(f"{MUSIC_DIR}/{track_id}.mp3")
-	create_thumbnail(f"{ALBUMS_DIR}/{track_id}.jpg", f"{THUMBNAILS_DIR}/{track_id}_thumbnail.jpg")
+	add_track_image(f"{MUSIC_DIR}/{track_id}.mp3")
+	add_track_thumbnail(f"{IMAGES_DIR}/{track_id}.jpg")
 
 	return JSONResponse({"message": "Track added successfully", "track_id": track_id})
 
@@ -88,20 +135,20 @@ async def del_track(track_id: int):
 		pass
 
 	try:
-		os.remove(f"{ALBUMS_DIR}/{track_id}.jpg")
+		os.remove(f"{IMAGES_DIR}/{track_id}.jpg")
 	except:
 		pass
 
 	return JSONResponse({"message": "Track deleted"})
 
-@app.get("/api/albums/{track_id}")
+@app.get("/api/images/{track_id}")
 async def get_track_album(track_id: int):
-	if not os.path.exists(f"{ALBUMS_DIR}/{track_id}.jpg"):
+	if not os.path.exists(f"{IMAGES_DIR}/{track_id}.jpg"):
 		raise HTTPException(detail="Track not found", status_code=404)
 
-	return FileResponse(f"{ALBUMS_DIR}/{track_id}.jpg")
+	return FileResponse(f"{IMAGES_DIR}/{track_id}.jpg")
 
-@app.get("/api/albums/thumbnails/{track_id}")
+@app.get("/api/images/thumbnails/{track_id}")
 async def get_track_album(track_id: int):
 	if not os.path.exists(f"{THUMBNAILS_DIR}/{track_id}_thumbnail.jpg"):
 		raise HTTPException(detail="Track not found", status_code=404)
@@ -121,8 +168,8 @@ async def tracks(page: int = 1, page_size: int = 32):
 			"title": track.title,
 			"artist": track.artist,
 			"duration": track.duration,
-			"thumbnail_url": f"http://{HOST}/api/albums/thumbnails/{track.id}",
-			"album_url": f"http://{HOST}/api/albums/{track.id}",
+			"thumbnail_url": f"http://{HOST}/api/images/thumbnails/{track.id}",
+			"image_url": f"http://{HOST}/api/images/{track.id}",
 			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream",
 			"track_hash": track.sha256_hash})
 
@@ -130,19 +177,31 @@ async def tracks(page: int = 1, page_size: int = 32):
 
 @app.get("/api/tracks/{track_id}")
 async def get_track_info(track_id: int):
-	if not await exists_track(track_id):
-		raise HTTPException(detail="Track not found", status_code=404)
-
 	track = await get_track(track_id)
 
 	return JSONResponse({"title": track.title,
 		"artist": track.artist,
 		"duration": track.duration,
-		"thumbnail_url": f"http://{HOST}/api/albums/thumbnails/{track.id}",
-		"album_url": f"http://{HOST}/api/albums/{track.id}",
+		"thumbnail_url": f"http://{HOST}/api/images/thumbnails/{track.id}",
+		"image_url": f"http://{HOST}/api/images/{track.id}",
 		"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream",
 		"track_hash": track.sha256_hash})
 
 @app.get("/api/tracks/{track_id}/stream")
 async def stream_track(track_id: int):
-	return StreamingResponse(iter_audio_file(f"{MUSIC_DIR}/{track_id}.mp3"), media_type="auido/mpeg")
+	if not await exists_track(track_id):
+		raise HTTPException(detail="Track not found", status_code=404)
+
+	return StreamingResponse(stream_audio_file(f"{MUSIC_DIR}/{track_id}.mp3"), media_type="auido/mpeg")
+
+@app.get("/api/tracks/p/{track_id}/stream")
+async def stream_ptrack(track_id: int):
+	if not await exists_ptrack(track_id):
+		raise HTTPException(detail="Track not found", status_code=404)
+
+	try:
+		track = await get_ptrack(track_id)
+
+		return StreamingResponse(proxy_stream_audio_file(track.download_url), media_type="audio/mpeg")
+	except:
+		raise HTTPException(detail="Transmission error", status_code=500)
