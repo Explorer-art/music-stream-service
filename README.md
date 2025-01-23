@@ -1,1 +1,1 @@
-# music-stream-service
+# Music Stream Service
