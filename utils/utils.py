@@ -27,9 +27,15 @@ def add_track_thumbnail(filename):
 def add_track_image(filename):
 	audio_file = eyed3.load(filename)
 
+	image_found = False
+
 	for image in audio_file.tag.images:
+		image_found = True
+
 		with open(f"{IMAGES_DIR}/{os.path.splitext(os.path.basename(filename))[0]}.jpg", "wb") as file:
 			file.write(image.image_data)
+
+	return image_found
 
 def stream_audio_file(filename, chunk_size = 1024):
 	with open(filename, "rb") as file:

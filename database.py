@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from config import DATABASE_URL
+
+track_id_seq = Sequence("track_id_seq", start=1, increment=1)
 
 class Base(DeclarativeBase):
 	pass
@@ -9,7 +11,7 @@ class Base(DeclarativeBase):
 class Track(Base):
 	__tablename__ = "Tracks"
 
-	id = Column(Integer, primary_key=True, autoincrement=True)
+	id = Column(Integer, track_id_seq, primary_key=True)
 	title = Column(String)
 	artist = Column(String)
 	duration = Column(String)
@@ -18,7 +20,7 @@ class Track(Base):
 class TrackPending(Base):
 	__tablename__ = "TracksPending"
 
-	id = Column(Integer, primary_key=True, autoincrement=True)
+	id = Column(Integer, track_id_seq, primary_key=True)
 	title = Column(String)
 	artist = Column(String)
 	duration = Column(String)

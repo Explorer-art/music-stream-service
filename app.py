@@ -2,7 +2,7 @@ import os
 import random
 from fastapi import Request, HTTPException
 from fastapi import FastAPI, File, Form, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.responses import FileResponse, JSONResponse
@@ -98,8 +98,8 @@ async def upload_track(file: UploadFile = File(...)):
 		file.write(file_content)
 
 	audio_file = eyed3.load(f"tmp/{tmp_filename}")
-	title = audio_file.tag.title
-	artist = audio_file.tag.artist
+	title = audio_file.tag.title if audio_file.tag.title else "Unknown title"
+	artist = audio_file.tag.artist if audio_file.tag.artist else "Unknown artist"
 	duration = audio_file.info.time_secs
 	minutes = int(duration // 60)
 	seconds = int(duration % 60)
@@ -117,43 +117,61 @@ async def upload_track(file: UploadFile = File(...)):
 	with open(f"{MUSIC_DIR}/{track_id}.mp3", "wb") as file:
 		file.write(file_content)
 
-	add_track_image(f"{MUSIC_DIR}/{track_id}.mp3")
-	add_track_thumbnail(f"{IMAGES_DIR}/{track_id}.jpg")
+	if add_track_image(f"{MUSIC_DIR}/{track_id}.mp3"):
+		add_track_thumbnail(f"{IMAGES_DIR}/{track_id}.jpg")
 
 	return JSONResponse({"message": "Track added successfully", "track_id": track_id})
 
 @app.delete("/api/tracks/{track_id}")
 async def del_track(track_id: int):
-	if not await exists_track(track_id):
+	if await exists_track(track_id):
+		await delete_track(track_id)
+
+		try:
+			os.remove(f"{MUSIC_DIR}/{track_id}.mp3")
+		except:
+			pass
+
+		try:
+			os.remove(f"{IMAGES_DIR}/{track_id}.jpg")
+		except:
+			pass
+
+		return JSONResponse({"message": "Track deleted"})
+	elif await exists_ptrack(track_id):
+		await delete_ptrack(track_id)
+
+		return JSONResponse({"message": "Track deleted"})
+	else:
 		raise HTTPException(detail="Track not found", status_code=404)
-
-	await delete_track(track_id)
-
-	try:
-		os.remove(f"{MUSIC_DIR}/{track_id}.mp3")
-	except:
-		pass
-
-	try:
-		os.remove(f"{IMAGES_DIR}/{track_id}.jpg")
-	except:
-		pass
-
-	return JSONResponse({"message": "Track deleted"})
-
-@app.get("/api/images/{track_id}")
-async def get_track_album(track_id: int):
-	if not os.path.exists(f"{IMAGES_DIR}/{track_id}.jpg"):
-		raise HTTPException(detail="Track not found", status_code=404)
-
-	return FileResponse(f"{IMAGES_DIR}/{track_id}.jpg")
 
 @app.get("/api/images/thumbnails/{track_id}")
-async def get_track_album(track_id: int):
-	if not os.path.exists(f"{THUMBNAILS_DIR}/{track_id}_thumbnail.jpg"):
+async def get_track_thumbnail(track_id: int):
+	if await exists_track(track_id):
+		if not os.path.exists(f"{THUMBNAILS_DIR}/{track_id}.jpg"):
+			raise HTTPException(detail="Track not found", status_code=404)
+
+		return FileResponse(f"{THUMBNAILS_DIR}/{track_id}.jpg")
+	elif await exists_ptrack(track_id):
+		track = await get_ptrack(track_id)
+
+		return RedirectResponse(url=track.image_url)
+	else:
 		raise HTTPException(detail="Track not found", status_code=404)
 
-	return FileResponse(f"{THUMBNAILS_DIR}/{track_id}_thumbnail.jpg")
+@app.get("/api/images/{track_id}")
+async def get_track_image(track_id: int):
+	if await exists_track(track_id):
+		if not os.path.exists(f"{IMAGES_DIR}/{track_id}.jpg"):
+			raise HTTPException(detail="Track not found", status_code=404)
+
+		return FileResponse(f"{IMAGES_DIR}/{track_id}.jpg")
+	elif await exists_ptrack(track_id):
+		track = await get_ptrack(track_id)
+
+		return RedirectResponse(url=track.image_url)
+	else:
+		raise HTTPException(detail="Track not found", status_code=404)
 
 @app.get("/api/tracks")
 async def tracks(page: int = 1, page_size: int = 32):
@@ -177,31 +195,39 @@ async def tracks(page: int = 1, page_size: int = 32):
 
 @app.get("/api/tracks/{track_id}")
 async def get_track_info(track_id: int):
-	track = await get_track(track_id)
+	if await exists_track(track_id):
+		track = await get_track(track_id)
 
-	return JSONResponse({"title": track.title,
-		"artist": track.artist,
-		"duration": track.duration,
-		"thumbnail_url": f"http://{HOST}/api/images/thumbnails/{track.id}",
-		"image_url": f"http://{HOST}/api/images/{track.id}",
-		"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream",
-		"track_hash": track.sha256_hash})
+		return JSONResponse({"title": track.title,
+			"artist": track.artist,
+			"duration": track.duration,
+			"thumbnail_url": f"http://{HOST}/api/images/thumbnails/{track.id}",
+			"image_url": f"http://{HOST}/api/images/{track.id}",
+			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream",
+			"track_hash": track.sha256_hash})
+	elif await exists_ptrack(track_id):
+		track = await get_ptrack(tracK_id)
+
+		return JSONResponse({"title": track.title,
+			"artist": track.artist,
+			"duration": track.duration,
+			"thumbnail_url": f"http://{HOST}/api/images/thumbnails/{track.id}",
+			"image_url": f"http://{HOST}/api/images/{track.id}",
+			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream",
+			"track_hash": False})
+	else:
+		raise HTTPException(detail="Track not found", status_code=404)
 
 @app.get("/api/tracks/{track_id}/stream")
 async def stream_track(track_id: int):
-	if not await exists_track(track_id):
+	if await exists_track(track_id):
+		return StreamingResponse(stream_audio_file(f"{MUSIC_DIR}/{track_id}.mp3"), media_type="auido/mpeg")
+	elif await exists_ptrack(track_id):
+		try:
+			track = await get_ptrack(track_id)
+
+			return StreamingResponse(proxy_stream_audio_file(track.download_url), media_type="audio/mpeg")
+		except:
+			raise HTTPException(detail="Transmission error", status_code=500)
+	else:
 		raise HTTPException(detail="Track not found", status_code=404)
-
-	return StreamingResponse(stream_audio_file(f"{MUSIC_DIR}/{track_id}.mp3"), media_type="auido/mpeg")
-
-@app.get("/api/tracks/p/{track_id}/stream")
-async def stream_ptrack(track_id: int):
-	if not await exists_ptrack(track_id):
-		raise HTTPException(detail="Track not found", status_code=404)
-
-	try:
-		track = await get_ptrack(track_id)
-
-		return StreamingResponse(proxy_stream_audio_file(track.download_url), media_type="audio/mpeg")
-	except:
-		raise HTTPException(detail="Transmission error", status_code=500)
