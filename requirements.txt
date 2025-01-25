@@ -3,7 +3,6 @@ uvicorn
 jinja2
 sqlalchemy[asycnio]
 asyncpg
-aiosqlite
 requests
 bs4
 aiohttp
