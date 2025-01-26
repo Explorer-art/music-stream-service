@@ -1,10 +1,49 @@
-<html>
-	<head>
-		<title>Music Stream Service</title>
-	</head>
-	<body>
-		<audio controls>
-			<source src="http://127.0.0.1:8000/api/tracks/1/stream" type="audio/mpeg">
-		</audio>
-	</body>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Треки</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles/styles.css">
+</head>
+<body>
+    <header>
+        <div class="logo">UNK</div>
+        <div class="search">
+            <input type="text" placeholder="Поиск">
+        </div>
+    </header>
+
+    <main>
+        <div class="tracks-list" id="tracksList">
+        </div>
+    </main>
+
+    <div class="music-player">
+        <div class="player-track-info">
+            <img class="player-track-image" src="" alt="Обложка трека">
+            <div class=player-track-details>
+                <span id="player-track-title"></span>
+                <span id="player-track-artist"></span>
+            </div>
+        </div>
+        <div class="player-progress-bar">
+            <input type="range" id="progress", value="0" max="1000">
+            <div class="player-controls">
+                <button id="prev-track"><i class="fas fa-backward"></i></button>
+                <button class="play-btn" id="play-track"><i class="fas fa-play"></i></button>
+                <button id="next-track"><i class="fas fa-forward"></i></button>
+            </div>
+        </div>
+        <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+        <div class="player-volume-control">
+            <input type="range" id="volume" value="100" max="100">
+        </div>
+    </div>
+
+    <audio id="audio-player" preload="auto"></audio>
+
+    <script src="/static/scripts/script.js"></script>
+</body>
 </html>

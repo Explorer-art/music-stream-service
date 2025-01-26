@@ -30,17 +30,49 @@ async def get_tracks(session: AsyncSession, offset: int = 0, page_size: int = PA
 	return tracks
 
 @connection
-async def add_track(session: AsyncSession, title, artist, duration, sha256_hash):
-	track = Track(
-		title = title,
-		artist = artist,
-		duration = duration,
-		sha256_hash = sha256_hash)
+async def add_track(session: AsyncSession, track_id=None, title=None, artist=None, duration=None, sha256_hash=None):
+	if track_id:
+		track = Track(
+			id=track_id,
+			title = title,
+			artist = artist,
+			duration = duration,
+			sha256_hash = sha256_hash
+			)
+	else:
+		track = Track(
+			title = title,
+			artist = artist,
+			duration = duration,
+			sha256_hash = sha256_hash
+			)
 
 	session.add(track)
 	await session.commit()
 	await session.refresh(track)
 	return track.id
+
+@connection
+async def update_track(session: AsyncSession, track_id, id=None, title=None, artist=None, duration=None, sha256_hash=None):
+	if not await exists_track(track_id):
+		return False
+
+	track = await get_track(track_id)
+
+	if id is not None:
+		track.id = id
+	if title is not None:
+		track.title = title
+	if artist is not None:
+		track.artist = artist
+	if duration is not None:
+		track.duration = duration
+	if sha256_hash is not None:
+		track.sha256_hash = sha256_hash
+
+	session.add(track)
+	await session.commit()
+	return True
 
 @connection
 async def delete_track(session: AsyncSession, track_id):
@@ -95,18 +127,53 @@ async def get_ptracks(session: AsyncSession, offset: int = 0, page_size: int = P
 	return tracks
 
 @connection
-async def add_ptrack(session: AsyncSession, title, artist, duration, image_url, download_url):
-	track = TrackPending(
-		title = title,
-		artist = artist,
-		duration = duration,
-		image_url = image_url,
-		download_url = download_url)
+async def add_ptrack(session: AsyncSession, track_id=None, title=None, artist=None, duration=None, image_url=None, download_url=None):
+	if track_id:
+		track = TrackPending(
+			id=track_id,
+			title = title,
+			artist = artist,
+			duration = duration,
+			image_url = image_url,
+			download_url = download_url
+			)
+	else:
+		track = TrackPending(
+			title = title,
+			artist = artist,
+			duration = duration,
+			image_url = image_url,
+			download_url = download_url
+			)
 
 	session.add(track)
 	await session.commit()
 	await session.refresh(track)
 	return track.id
+
+@connection
+async def update_ptrack(session: AsyncSession, track_id, id=None, title=None, artist=None, duration=None, image_url=None, download_url=None):
+	if not await exists_ptrack(track_id):
+		return False
+
+	track = await get_ptrack(track_id)
+
+	if id is not None:
+		track.id = id
+	if title is not None:
+		track.title = title
+	if artist is not None:
+		track.artist = artist
+	if duration is not None:
+		track.duration = duration
+	if id is not None:
+		track.image_url = image_url
+	if id is not None:
+		track.download_url = download_url
+
+	session.add(track)
+	await session.commit()
+	return True
 
 @connection
 async def delete_ptrack(session: AsyncSession, track_id):

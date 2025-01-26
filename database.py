@@ -9,7 +9,7 @@ class Base(DeclarativeBase):
 	pass
 
 class Track(Base):
-	__tablename__ = "Tracks"
+	__tablename__ = "tracks"
 
 	id = Column(Integer, track_id_seq, primary_key=True)
 	title = Column(String)
@@ -18,7 +18,7 @@ class Track(Base):
 	sha256_hash = Column(String, unique=True)
 
 class TrackPending(Base):
-	__tablename__ = "TracksPending"
+	__tablename__ = "tracks_pending"
 
 	id = Column(Integer, track_id_seq, primary_key=True)
 	title = Column(String)

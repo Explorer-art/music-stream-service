@@ -1,0 +1,110 @@
+document.addEventListener('DOMContentLoaded', () => {
+    let tracks = [];
+    let currentTrackIndex = 0;
+    const audioPlayer = document.getElementById('audio-player');
+    const playButton = document.getElementById('play-track');
+    const progressBar = document.getElementById('progress');
+    const currentTimeDisplay = document.getElementById('current-time');
+    const durationDisplay = document.getElementById('duration');
+    const volumeControl = document.getElementById('volume');
+
+    // Функция для получения данных с API
+    async function fetchTracks() {
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/tracks');
+            const data = await response.json();
+            tracks = data.tracks; // Сохраняем треки в глобальной переменной
+            displayTracks(tracks);
+        } catch (error) {
+            console.error('Ошибка при получении данных:', error);
+        }
+    }
+
+    // Функция для отображения списка треков
+    function displayTracks(tracks) {
+        const tracksList = document.getElementById('tracksList');
+        tracksList.innerHTML = ""; // Очищаем текущий список
+
+        tracks.forEach((track, index) => {
+            const trackElement = document.createElement('div');
+            trackElement.classList.add('track-item');
+            
+            trackElement.innerHTML = `
+                <img src="${track.thumbnail_url}" alt="${track.title}">
+                <div class="track-info">
+                    <div class="track-details">
+                        <div class="track-title">${track.title}</div>
+                        <div class="track-artist">${track.artist}</div>
+                        <div class="track-duration">${track.duration}</div>
+                    </div>
+                </div>
+            `;
+            
+            trackElement.addEventListener('click', () => playTrack(index));
+            tracksList.appendChild(trackElement);
+        });
+    }
+
+    // Функция для воспроизведения трека
+    function playTrack(index) {
+        const track = tracks[index];
+        currentTrackIndex = index;
+
+        // Обновляем информацию о текущем треке
+        document.getElementById('player-track-title').textContent = track.title;
+        document.getElementById('player-track-artist').textContent = track.artist;
+        document.querySelector('.player-track-image').src = track.thumbnail_url;
+
+        // Устанавливаем источник для аудиоплеера
+        audioPlayer.src = track.stream_url;
+        audioPlayer.play();
+
+        playButton.innerHTML = '<i class="fas fa-pause"></i>'
+
+        // Обновляем продолжительность трека
+        audioPlayer.onloadedmetadata = () => {
+            durationDisplay.textContent = formatTime(audioPlayer.duration);
+        };
+
+        // Обработчик для обновления прогресса
+        audioPlayer.ontimeupdate = () => {
+            progressBar.value = (audioPlayer.currentTime / audioPlayer.duration) * 1000;
+            currentTimeDisplay.textContent = formatTime(audioPlayer.currentTime);
+        };
+    }
+
+    // Форматирование времени
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const secondsRemaining = Math.floor(seconds % 60);
+        return `${minutes}:${secondsRemaining < 10 ? '0' : ''}${secondsRemaining}`;
+    }
+
+    playButton.addEventListener('click', () => {
+        if (audioPlayer.paused) {
+            audioPlayer.play();
+            playButton.innerHTML = '<i class="fas fa-pause"></i>'
+        } else {
+            audioPlayer.pause();
+            playButton.innerHTML = '<i class="fas fa-play"></i>'
+        }
+    });
+
+    volumeControl.addEventListener('input', () => {
+        audioPlayer.volume = volumeControl.value / 100;
+    });
+
+    // Функция для переключения на следующий трек
+    document.getElementById('next-track').addEventListener('click', () => {
+        currentTrackIndex = (currentTrackIndex + 1) % tracks.length;
+        playTrack(currentTrackIndex);
+    });
+
+    // Функция для переключения на предыдущий трек
+    document.getElementById('prev-track').addEventListener('click', () => {
+        currentTrackIndex = (currentTrackIndex - 1 + tracks.length) % tracks.length;
+        playTrack(currentTrackIndex);
+    });
+
+    fetchTracks();
+});

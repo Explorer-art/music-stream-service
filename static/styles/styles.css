@@ -1,0 +1,211 @@
+/* Основные стили */
+body {
+    background-color: #1a1a1a;
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #fff;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #0d1012;
+    color: #eb5284;
+}
+
+.logo {
+    margin-left: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    background-color: #0d1012;
+}
+
+.search {
+    margin-right: 15px;
+    background-color: #0d1012;
+}
+
+.search input {
+    padding: 8px 12px;
+    width: 250px;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #1a1a1a;
+    color: #fff;
+    border: 2px solid #444;
+    border-radius: 25px;
+    transition: all 0.2s ease;
+}
+
+.search input:focus {
+    outline: none;
+    border-color: #e0e1dd;
+}
+
+.tracks-list {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.track-item {
+    display: flex;
+    align-items: flex-start; /* Выравниваем элементы по верху */
+    justify-content: space-between;
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 15px;
+    transition: background-color 0.3s ease;
+    background-color: transparent; /* Убираем фоновый цвет */
+}
+
+.track-item:hover {
+    background-color: rgba(85, 85, 85, 0.3); /* Полупрозрачная подсветка при наведении */
+}
+
+.track-item img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-right: 20px;
+}
+
+.track-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+}
+
+.track-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #e0e1dd;
+}
+
+.track-artist {
+    font-size: 14px;
+    font-weight: bold;
+    color: #bbb;
+    margin-bottom: 10px;
+}
+
+.track-duration {
+    color: #ccc;
+    font-size: 14px;
+}
+
+.track-control {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.music-player {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #333;
+    padding: 10px;
+    box-sizing: border-box;
+    color: white;
+}
+
+.player-track-info {
+    width: 250px;
+    display: flex;
+    align-items: center;
+}
+
+.player-track-image {
+    width: 60px;
+    height: 60px;
+    margin-right: 10px;
+    border-radius: 5px;
+}
+
+.player-track-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.player-track-title {
+    display: block;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.player-track-artist {
+    display: block;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.player-progress-bar {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 20px;
+}
+
+.player-controls {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+button {
+    background-color: transparent;
+    color: white;
+    border: none;
+    font-size: 20px;
+    margin: 0 10px;
+    cursor: pointer;
+}
+
+button:focus {
+    outline: none;
+}
+
+#progress {
+    margin-top: 15px;
+    width: 75%;
+    cursor: pointer;
+    margin: 0 10px;
+    transition: all 0.1 ease;
+}
+
+#current-time {
+    margin-left: 25px;
+}
+
+#duration {
+    margin-right: 5px;
+}
+
+#current-time, #duration {
+    font-size: 14px;
+}
+
+.player-volume-control {
+    display: flex;
+    align-items: center;
+}
+
+#volume {
+    width: 100px;
+    margin-right: 10px;
+}
+
+#volume-level {
+    font-size: 12px;
+}

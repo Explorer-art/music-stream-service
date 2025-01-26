@@ -3,6 +3,7 @@ import hashlib
 import aiohttp
 import io
 from PIL import Image
+from manager import *
 from config import *
 
 def get_sha256_hash_file(filename):
@@ -37,16 +38,29 @@ def add_track_image(filename):
 
 	return image_found
 
-def stream_audio_file(filename, chunk_size = 1024):
+async def download_track(url, track_id):
+	async with aiohttp.ClientSession() as session:
+		async with session.get(url) as response:
+			if response.status != 200:
+				raise HTTPException(detail="Trasmission error", status_code=500)
+
+			with open(f"{MUSIC_DIR}/{track_id}.mp3", "wb") as file:
+				while chunk := await response.content.read(CHUNK_SIZE):
+					file.write(chunk)
+
+	await update_track(track_id, sha256_hash=get_sha256_hash_file(f"{MUSIC_DIR}/{track_id}.mp3"))
+	await delete_ptrack(track_id)
+
+def stream_audio_file(filename):
 	with open(filename, "rb") as file:
-		while chunk := file.read(chunk_size):
+		while chunk := file.read(CHUNK_SIZE):
 			yield chunk
 
-async def proxy_stream_audio_file(download_url, chunk_size = 1024 * 1024):
+async def proxy_stream_audio_file(download_url):
 	async with aiohttp.ClientSession() as session:
 		async with session.get(download_url) as response:
 			if response.status != 200:
 				raise HTTPException(detail="Trasmission error", status_code=500)
 
-			while chunk := await response.content.read(chunk_size):
+			while chunk := await response.content.read(CHUNK_SIZE):
 				yield chunk
