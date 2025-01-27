@@ -40,9 +40,9 @@ async def startup():
 async def home(request: Request):
 	return templates.TemplateResponse("index.html", {"request": request})
 
-@app.get("/admin")
-async def admin_panel(request: Request):
-	return templates.TemplateResponse("admin.html", {"request": request})
+# @app.get("/admin")
+# async def admin_panel(request: Request):
+# 	return templates.TemplateResponse("admin.html", {"request": request})
 
 @app.post("/api/tracks/upload")
 async def upload_track(file: UploadFile = File(...)):
@@ -152,17 +152,14 @@ async def search(query: str):
 			"title": track.title,
 			"artist": track.artist,
 			"duration": track.duration,
-			"thumbnail_url": f"http://{HOST}/api/albums/thumbnails/{track.id}",
-			"image_url": f"http://{HOST}/api/albums/{track.id}",
-			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream",
-			"track_hash": track.sha256_hash})
+			"image_url": f"http://{HOST}/api/tracks/{track.id}/image",
+			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream"})
 
 	if GLOBAL_SEARCH:
 		tracks = hitmo.search(query)
-		track_pending_data = []
 
 		if tracks is None:
-			return JSONResponse({"tracks": tracks_data, "tracks_pending": track_pending_data})
+			return JSONResponse({"tracks": tracks_data})
 
 		for track in tracks:
 			if not await exists_ptrack_by_download_url(track.download_url) and not await exists_ptrack_by_image_url(track.image_url):
@@ -176,14 +173,12 @@ async def search(query: str):
 		tracks = await search_ptracks(query)
 
 		for track in tracks:
-			track_pending_data.append({"track_id": track.id,
+			tracks_data.append({"track_id": track.id,
 				"title": track.title,
 				"artist": track.artist,
 				"duration": track.duration,
 				"image_url": f"http://{HOST}/api/tracks/{track.id}/image",
 				"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream"})
-
-		return JSONResponse({"tracks": tracks_data, "tracks_pending": track_pending_data})
 
 	return JSONResponse({"tracks": tracks_data})
 

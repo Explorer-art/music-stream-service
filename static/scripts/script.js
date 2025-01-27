@@ -14,15 +14,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('http://127.0.0.1:8000/api/tracks');
             const data = await response.json();
             tracks = data.tracks; // Сохраняем треки в глобальной переменной
-            displayTracks(tracks);
+            displayTracks(tracks, 'tracksList');
         } catch (error) {
             console.error('Ошибка при получении данных:', error);
         }
     }
 
     // Функция для отображения списка треков
-    function displayTracks(tracks) {
-        const tracksList = document.getElementById('tracksList');
+    function displayTracks(tracks, container) {
+        const tracksList = document.getElementById(container);
         tracksList.innerHTML = ""; // Очищаем текущий список
 
         tracks.forEach((track, index) => {
@@ -104,6 +104,27 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prev-track').addEventListener('click', () => {
         currentTrackIndex = (currentTrackIndex - 1 + tracks.length) % tracks.length;
         playTrack(currentTrackIndex);
+    });
+
+    document.getElementById('search').addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            const query = event.target.value;
+                
+            fetch(`http://127.0.0.1:8000/api/tracks/search?query=${encodeURIComponent(query)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                tracks = data.tracks;
+                displayTracks(data.tracks, 'tracksList');
+             })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        }
     });
 
     fetchTracks();
