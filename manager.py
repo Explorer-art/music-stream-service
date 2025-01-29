@@ -1,13 +1,80 @@
 from sqlalchemy import exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from auth import *
 from database import *
 from config import *
 
 @connection
+async def exists_user(session: AsyncSession, user_id):
+	result = await session.scalar(select(exists().where(User.id == user_id)))
+	return result
+
+@connection
+async def exists_user_by_username(session: AsyncSession, username):
+	result = await session.scalar(select(exists().where(User.username == username)))
+	return result
+
+@connection
+async def get_user(session: AsyncSession, user_id):
+	user = await session.scalar(select(User).filter(User.id == user_id))
+	return user
+
+@connection
+async def get_user_by_username(session: AsyncSession, username):
+	user = await session.scalar(select(User).filter(User.username == username))
+	return user
+
+@connection
+async def add_user(session: AsyncSession, username, password, permissions_group):
+	if await exists_user(username):
+		return False
+
+	password_hash = get_password_hash(password)
+
+	user = User(
+		username=username,
+		password=password_hash,
+		permissions_group=permissions_group
+		)
+
+	session.add(user)
+	await session.commit()
+	await session.refresh()
+	return user.id
+
+@connection
+async def update_user(session: AsyncSession, user_id, username=None, password_hash=None, permissions_group=None):
+	user = session.scalar(select(User).filter(User.id == user_id))
+
+	if user is None:
+		return False
+
+	if username is not None:
+		user.username = username
+	if username is not None:
+		user.password_hash = password_hash
+	if username is not None:
+		user.permissions_group = permissions_group
+
+	session.add(user)
+	await session.commit()
+	return True
+
+@connection
+async def delete_user(session: AsyncSession, user_id):
+	user = session.scalar(select(User).filter(User.id == user_id))
+
+	if user is None:
+		return False
+
+	await session.delete(user)
+	await session.commit()
+	return True
+
+@connection
 async def exists_track(session: AsyncSession, track_id):
 	result = await session.scalar(select(exists().where(Track.id == track_id)))
-
 	return result
 
 @connection
@@ -96,19 +163,16 @@ async def search_tracks(session: AsyncSession, query):
 @connection
 async def exists_ptrack(session: AsyncSession, track_id):
 	result = await session.scalar(select(exists().where(TrackPending.id == track_id)))
-
 	return result
 
 @connection
 async def exists_ptrack_by_download_url(session: AsyncSession, download_url):
 	result = await session.scalar(select(exists().where(TrackPending.download_url == download_url)))
-
 	return result
 
 @connection
 async def exists_ptrack_by_image_url(session: AsyncSession, image_url):
 	result = await session.scalar(select(exists().where(TrackPending.image_url == image_url)))
-
 	return result
 
 @connection

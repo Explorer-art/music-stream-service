@@ -1,14 +1,16 @@
 import os
 import random
 import asyncio
-from fastapi import Request, HTTPException
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, Request, Header, File, Form, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.responses import FileResponse, JSONResponse
+from passlib.context import CryptContext
 from database import *
 from manager import *
+from auth import *
+from schemes import *
 from search import *
 from utils.utils import *
 from config import *
@@ -19,6 +21,17 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 hitmo = Hitmo()
+
+async def verify_user(user_id):
+	if not await exists_user_by_username(username):
+		return False
+
+	user = await get_user_by_username(username)
+
+	if not password_context.verify(password, user.password):
+		return False
+
+	return user
 
 @app.on_event("startup")
 async def startup():
@@ -31,12 +44,31 @@ async def startup():
 	await init_db()
 
 @app.get("/")
-async def home(request: Request):
+async def home_page(request: Request):
 	return templates.TemplateResponse("index.html", {"request": request})
 
-# @app.get("/admin")
-# async def admin_panel(request: Request):
-# 	return templates.TemplateResponse("admin.html", {"request": request})
+@app.get("/login")
+async def login_page(request: Request):
+	return templates.TemplateResponse("login.html", {"request": request})
+
+@app.post("/api/login")
+async def login(request: Request, username = Form(...), password = Form(...)):
+	check = await verify_user(username, password)
+
+	if not check:
+		return JSONResponse({"message": "Wrong username or password"}, status_code=401)
+
+	token = create_access_token({"sub": str(check.id)})
+	return JSONResponse({"token": token})
+
+@app.get("/admin")
+async def admin_panel(request: Request, authorization: str = Header(None)):
+	user_id = await get_current_user_id(authorization)
+
+	if not await exists_user(int(user_id)):
+		return JSONResponse({"message": "Unauthorized"}, status_code=401)
+
+	return templates.TemplateResponse("admin.html", {"request": request})
 
 @app.post("/api/tracks/upload")
 async def upload_track(file: UploadFile = File(...)):

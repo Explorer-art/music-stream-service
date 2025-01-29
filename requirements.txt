@@ -3,6 +3,9 @@ uvicorn
 jinja2
 sqlalchemy[asycnio]
 asyncpg
+bcrypt
+python-jose
+passlib
 requests
 bs4
 aiohttp

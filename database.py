@@ -8,6 +8,14 @@ track_id_seq = Sequence("track_id_seq", start=1, increment=1)
 class Base(DeclarativeBase):
 	pass
 
+class User(Base):
+	__tablename__ = "users"
+
+	id = Column(Integer, primary_key=True, autoincrement=True)
+	username = Column(String, unique=True)
+	password = Column(String)
+	permissions_group = Column(Integer)
+
 class Track(Base):
 	__tablename__ = "tracks"
 
