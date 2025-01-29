@@ -15,7 +15,7 @@ class Track(Base):
 	title = Column(String)
 	artist = Column(String)
 	duration = Column(String)
-	sha256_hash = Column(String, unique=True)
+	sha256_hash = Column(String)
 
 class TrackPending(Base):
 	__tablename__ = "tracks_pending"
@@ -24,7 +24,8 @@ class TrackPending(Base):
 	title = Column(String)
 	artist = Column(String)
 	duration = Column(String)
-	image_url = Column(String, unique=True)
+	source = Column(String)
+	image_url = Column(String)
 	download_url = Column(String, unique=True)
 
 engine = create_async_engine(DATABASE_URL)

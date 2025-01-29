@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             trackElement.classList.add('track-item');
             
             trackElement.innerHTML = `
-                <img src="${track.thumbnail_url}" alt="${track.title}">
+                <img src="${track.image_url}" alt="${track.title}">
                 <div class="track-info">
                     <div class="track-details">
                         <div class="track-title">${track.title}</div>
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Обновляем информацию о текущем треке
         document.getElementById('player-track-title').textContent = track.title;
         document.getElementById('player-track-artist').textContent = track.artist;
-        document.querySelector('.player-track-image').src = track.thumbnail_url;
+        document.querySelector('.player-track-image').src = track.image_url;
 
         // Устанавливаем источник для аудиоплеера
         audioPlayer.src = track.stream_url;

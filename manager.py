@@ -127,13 +127,14 @@ async def get_ptracks(session: AsyncSession, offset: int = 0, page_size: int = P
 	return tracks
 
 @connection
-async def add_ptrack(session: AsyncSession, track_id=None, title=None, artist=None, duration=None, image_url=None, download_url=None):
+async def add_ptrack(session: AsyncSession, track_id=None, title=None, artist=None, duration=None, source=None, image_url=None, download_url=None):
 	if track_id:
 		track = TrackPending(
 			id=track_id,
 			title = title,
 			artist = artist,
 			duration = duration,
+			source = source,
 			image_url = image_url,
 			download_url = download_url
 			)
@@ -142,6 +143,7 @@ async def add_ptrack(session: AsyncSession, track_id=None, title=None, artist=No
 			title = title,
 			artist = artist,
 			duration = duration,
+			source = source,
 			image_url = image_url,
 			download_url = download_url
 			)
@@ -152,7 +154,7 @@ async def add_ptrack(session: AsyncSession, track_id=None, title=None, artist=No
 	return track.id
 
 @connection
-async def update_ptrack(session: AsyncSession, track_id, id=None, title=None, artist=None, duration=None, image_url=None, download_url=None):
+async def update_ptrack(session: AsyncSession, track_id, id=None, title=None, artist=None, duration=None, source=None, image_url=None, download_url=None):
 	if not await exists_ptrack(track_id):
 		return False
 
@@ -166,9 +168,11 @@ async def update_ptrack(session: AsyncSession, track_id, id=None, title=None, ar
 		track.artist = artist
 	if duration is not None:
 		track.duration = duration
-	if id is not None:
+	if source is not None:
+		track.source = source
+	if image_url is not None:
 		track.image_url = image_url
-	if id is not None:
+	if download_url is not None:
 		track.download_url = download_url
 
 	session.add(track)

@@ -22,17 +22,11 @@ hitmo = Hitmo()
 
 @app.on_event("startup")
 async def startup():
-	if not os.path.exists("db"):
-		os.mkdir("db")
-
 	if not os.path.exists(MUSIC_DIR):
 		os.mkdir(MUSIC_DIR)
 
 	if not os.path.exists(IMAGES_DIR):
 		os.mkdir(IMAGES_DIR)
-
-	if not os.path.exists(THUMBNAILS_DIR):
-		os.mkdir(THUMBNAILS_DIR)
 
 	await init_db()
 
@@ -82,8 +76,7 @@ async def upload_track(file: UploadFile = File(...)):
 	with open(f"{MUSIC_DIR}/{track_id}.mp3", "wb") as file:
 		file.write(file_content)
 
-	if add_track_image(f"{MUSIC_DIR}/{track_id}.mp3"):
-		add_track_thumbnail(f"{IMAGES_DIR}/{track_id}.jpg")
+	add_track_image(f"{MUSIC_DIR}/{track_id}.mp3")
 
 	return JSONResponse({"message": "Track added successfully", "track_id": track_id})
 
@@ -110,27 +103,13 @@ async def del_track(track_id: int):
 	else:
 		raise HTTPException(detail="Track not found", status_code=404)
 
-@app.get("/api/tracks/{track_id}/thumbnail")
-async def get_track_thumbnail(track_id: int):
-	if await exists_track(track_id):
-		if not os.path.exists(f"{THUMBNAILS_DIR}/{track_id}.jpg"):
-			raise HTTPException(detail="Track not found", status_code=404)
-
-		return FileResponse(f"{THUMBNAILS_DIR}/{track_id}.jpg")
-	elif await exists_ptrack(track_id) and GLOBAL_SEARCH:
-		track = await get_ptrack(track_id)
-
-		return RedirectResponse(url=track.image_url)
-	else:
-		raise HTTPException(detail="Track not found", status_code=404)
-
 @app.get("/api/tracks/{track_id}/image")
 async def get_track_image(track_id: int):
 	if await exists_track(track_id):
-		if not os.path.exists(f"{IMAGES_DIR}/{track_id}.jpg"):
+		if not os.path.exists(f"{IMAGES_DIR}/{track_id}.png"):
 			raise HTTPException(detail="Track not found", status_code=404)
 
-		return FileResponse(f"{IMAGES_DIR}/{track_id}.jpg")
+		return FileResponse(f"{IMAGES_DIR}/{track_id}.png")
 	elif await exists_ptrack(track_id) and GLOBAL_SEARCH:
 		track = await get_ptrack(track_id)
 
@@ -162,17 +141,17 @@ async def search(query: str):
 			return JSONResponse({"tracks": tracks_data})
 
 		for track in tracks:
-			if not await exists_ptrack_by_download_url(track.download_url) and not await exists_ptrack_by_image_url(track.image_url):
+			if not await exists_ptrack_by_download_url(track.download_url):
 				track_id = await add_ptrack(title=track.title,
 					artist=track.artist,
 					duration=track.duration,
+					source = "Hitmo",
 					image_url=track.image_url,
 					download_url=track.download_url
 					)
 
-		tracks = await search_ptracks(query)
+			track = await get_ptrack_by_download_url(track.download_url)
 
-		for track in tracks:
 			tracks_data.append({"track_id": track.id,
 				"title": track.title,
 				"artist": track.artist,
@@ -195,7 +174,6 @@ async def tracks(page: int = 1, page_size: int = 32):
 			"title": track.title,
 			"artist": track.artist,
 			"duration": track.duration,
-			"thumbnail_url": f"http://{HOST}/api/tracks/{track.id}/thumbnail",
 			"image_url": f"http://{HOST}/api/tracks/{track.id}/image",
 			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream",
 			"track_hash": track.sha256_hash})
@@ -210,20 +188,16 @@ async def get_track_info(track_id: int):
 		return JSONResponse({"title": track.title,
 			"artist": track.artist,
 			"duration": track.duration,
-			"thumbnail_url": f"http://{HOST}/api/tracks/{track.id}/thumbnail",
 			"image_url": f"http://{HOST}/api/tracks/{track.id}/image",
-			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream",
-			"track_hash": track.sha256_hash})
+			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream"})
 	elif await exists_ptrack(track_id) and GLOBAL_SEARCH:
 		track = await get_ptrack(tracK_id)
 
 		return JSONResponse({"title": track.title,
 			"artist": track.artist,
 			"duration": track.duration,
-			"thumbnail_url": f"http://{HOST}/api/tracks/{track.id}/thumbnail",
 			"image_url": f"http://{HOST}/api/tracks/{track.id}/image",
-			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream",
-			"track_hash": False})
+			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream"})
 	else:
 		raise HTTPException(detail="Track not found", status_code=404)
 
@@ -243,7 +217,7 @@ async def stream_track(track_id: int):
 				sha256_hash=""
 				)
 
-			asyncio.create_task(download_track(track.download_url, track.id))
+			asyncio.create_task(download_track(track.download_url, track.image_url, track.id))
 
 		return StreamingResponse(proxy_stream_audio_file(track.download_url), media_type="audio/mpeg")
 	else:
