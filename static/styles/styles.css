@@ -21,6 +21,7 @@ header {
     font-size: 28px;
     font-weight: bold;
     background-color: #0d1012;
+    cursor: pointer;
 }
 
 .search {

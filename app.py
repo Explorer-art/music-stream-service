@@ -1,7 +1,7 @@
 import os
 import random
 import asyncio
-from fastapi import FastAPI, Request, Response, Header, File, Form, UploadFile, HTTPException
+from fastapi import FastAPI, Request, Response, Header, Cookie, File, Form, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -33,14 +33,18 @@ async def verify_user(username, password):
 
 	return user
 
-async def verify(token):
+async def get_current_user(token):
 	if not token:
 		raise HTTPException(detail="Unauthorized", status_code=401)
 
 	user_id = await get_current_user_id(token)
 
-	if not await exists_user(int(user_id)):
+	user = await get_user(int(user_id))
+
+	if user is None:
 		raise HTTPException(detail="Unauthorized", status_code=401)
+
+	return user
 
 @app.on_event("startup")
 async def startup():
@@ -60,19 +64,31 @@ async def home_page(request: Request):
 async def login_page(request: Request):
 	return templates.TemplateResponse("login.html", {"request": request})
 
-@app.get("/api/login")
-def login(response: Response):
-	response.set_cookie(key="user_access_token", value="123", httponly=True)
-	return JSONResponse({"user_access_token": "123"})
-
 @app.get("/admin")
-async def admin_panel(request: Request, authorization: str = Header(None)):
-	await verify(authorization)
+async def admin_panel(request: Request, user_access_token: str = Cookie(None)):
+	user = await get_current_user(user_access_token)
+
+	print(user.permissions_level)
+
+	if user.permissions_level > 0:
+		return JSONResponse({"message": "Access denied"}, status_code=403)
 
 	return templates.TemplateResponse("admin.html", {"request": request})
 
+@app.post("/api/login")
+async def login(username = Form(...), password = Form(...)):
+	check = await verify_user(username, password)
+
+	if not check:
+		return JSONResponse({"message": "Wrong username or password"}, status_code=401)
+
+	token = create_access_token({"sub": str(check.id)})
+	return JSONResponse({"token": token})
+
 @app.post("/api/tracks/upload")
-async def upload_track(file: UploadFile = File(...)):
+async def upload_track(file: UploadFile = File(...), authorization: str = Header(None)):
+	user = await get_current_user(authorization)
+
 	file_content = await file.read()
 	file_size = file.file._file.tell()
 
@@ -114,7 +130,9 @@ async def upload_track(file: UploadFile = File(...)):
 	return JSONResponse({"message": "Track added successfully", "track_id": track_id})
 
 @app.delete("/api/tracks/{track_id}")
-async def del_track(track_id: int):
+async def del_track(track_id: int, authorization: str = Header(None)):
+	user = await get_current_user(authorization)
+
 	if await exists_track(track_id):
 		await delete_track(track_id)
 
@@ -136,22 +154,10 @@ async def del_track(track_id: int):
 	else:
 		raise HTTPException(detail="Track not found", status_code=404)
 
-@app.get("/api/tracks/{track_id}/image")
-async def get_track_image(track_id: int):
-	if await exists_track(track_id):
-		if not os.path.exists(f"{IMAGES_DIR}/{track_id}.png"):
-			raise HTTPException(detail="Track not found", status_code=404)
-
-		return FileResponse(f"{IMAGES_DIR}/{track_id}.png")
-	elif await exists_ptrack(track_id) and GLOBAL_SEARCH:
-		track = await get_ptrack(track_id)
-
-		return RedirectResponse(url=track.image_url)
-	else:
-		raise HTTPException(detail="Track not found", status_code=404)
-
 @app.get("/api/tracks/search")
-async def search(query: str):
+async def search(query: str, authorization: str = Header(None)):
+	user = await get_current_user(authorization)
+
 	tracks = await search_tracks(query)
 
 	if tracks is None:
@@ -195,7 +201,9 @@ async def search(query: str):
 	return JSONResponse({"tracks": tracks_data})
 
 @app.get("/api/tracks")
-async def tracks(page: int = 1, page_size: int = 32):
+async def tracks(page: int = 1, page_size: int = 32, authorization: str = Header(None)):
+	user = await get_current_user(authorization)
+
 	if page < 1 or page_size > 32:
 		raise HTTPException(detail="The page can't be less than 1", status_code=400)
 
@@ -231,6 +239,20 @@ async def get_track_info(track_id: int):
 			"duration": track.duration,
 			"image_url": f"http://{HOST}/api/tracks/{track.id}/image",
 			"stream_url": f"http://{HOST}/api/tracks/{track.id}/stream"})
+	else:
+		raise HTTPException(detail="Track not found", status_code=404)
+
+@app.get("/api/tracks/{track_id}/image")
+async def get_track_image(track_id: int):
+	if await exists_track(track_id):
+		if not os.path.exists(f"{IMAGES_DIR}/{track_id}.png"):
+			raise HTTPException(detail="Track not found", status_code=404)
+
+		return FileResponse(f"{IMAGES_DIR}/{track_id}.png")
+	elif await exists_ptrack(track_id) and GLOBAL_SEARCH:
+		track = await get_ptrack(track_id)
+
+		return RedirectResponse(url=track.image_url)
 	else:
 		raise HTTPException(detail="Track not found", status_code=404)
 

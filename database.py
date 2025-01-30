@@ -14,7 +14,7 @@ class User(Base):
 	id = Column(Integer, primary_key=True, autoincrement=True)
 	username = Column(String, unique=True)
 	password = Column(String)
-	permissions_group = Column(Integer)
+	permissions_level = Column(Integer)
 
 class Track(Base):
 	__tablename__ = "tracks"

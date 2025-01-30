@@ -11,7 +11,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Функция для получения данных с API
     async function fetchTracks() {
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/tracks');
+            const response = await fetch('http://127.0.0.1:8000/api/tracks', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': getAuthHeader() // Добавляем Authorization
+                }
+            });
             const data = await response.json();
             tracks = data.tracks; // Сохраняем треки в глобальной переменной
             displayTracks(tracks, 'tracksList');
@@ -113,7 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
             fetch(`http://127.0.0.1:8000/api/tracks/search?query=${encodeURIComponent(query)}`, {
                 method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': getAuthHeader() // Добавляем Authorization
                 }
             })
             .then(response => response.json())
@@ -127,17 +134,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    document.querySelector('.logo').addEventListener('click', () => {
+        window.location.href = '/';
+    });
+
+    // Функция для получения значения из cookies
     function getCookie(name) {
         const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-
-        if (match) {
-            return match[2];
-        }
-
-        return null;
+        return match ? match[2] : null;
     }
 
-    fetchTracks();
+    // Функция для получения заголовка Authorization
+    function getAuthHeader() {
+        const token = getCookie('user_access_token');
+        return token ? token : '';  // Возвращаем токен или пустую строку, если токен не найден
+    }
 
-    console.log(getCookie('user_access_token'))
+    fetchTracks();  // Загружаем треки при старте страницы
+
+    console.log(getCookie('user_access_token'))  // Для проверки
 });

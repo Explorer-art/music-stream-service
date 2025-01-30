@@ -3,7 +3,7 @@ import bcrypt
 from datetime import datetime, timedelta, timezone
 from typing import Union, Any
 from jose import jwt, JWTError
-from fastapi import Request, Depends, HTTPException, status
+from fastapi import Request, HTTPException
 from passlib.context import CryptContext
 from manager import *
 from config import *
@@ -42,17 +42,13 @@ async def get_current_user_id(token: str):
 	try:
 		payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=ALGORITHM)
 	except JWTError:
-		raise HTTPException(
-			status_code=status.HTTP_401_UNAUTHORIZED,
-			detail="Unauthorized")
+		raise HTTPException(detail="Unauthorized", status_code=401)
 
 	expire = payload.get("exp")
 	expire_time = datetime.fromtimestamp(int(expire), tz=timezone.utc)
 
 	if (not expire) or (expire_time < datetime.now(timezone.utc)):
-		raise HTTPException(
-			status_code=status.HTTP_401_UNAUTHORIZED,
-			detail="Unauthorized")
+		raise HTTPException(detail="Unauthorized", status_code=401)
 
 	user_id = payload.get("sub")
 
