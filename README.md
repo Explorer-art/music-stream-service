@@ -20,16 +20,36 @@ pip install -r requirements.txt
 
 ### API
 ##### Поиск треков
-`GET /api/tracks/search?query=Название`
+```
+GET /api/tracks/search?query=Название
+
+HTTP Headers
+Authorization: TOKEN
+```
 
 ##### Добавить новый трек
-`POST /api/tracks/upload`
+```
+POST /api/tracks/upload
+
+HTTP Headers
+Authorization: TOKEN
+```
 
 ##### Удалить трек
-`DELETE /api/tracks/{track_id}`
+```
+DELETE /api/tracks/{track_id}
+
+HTTP Headers
+Authorization: TOKEN
+```
 
 ##### Получить список треков
-`GET /api/tracks`
+```
+GET /api/tracks
+
+HTTP Headers
+Authorization: TOKEN
+```
 
 ##### Получить информацию о треке
 `GET /api/tracks/{track_id}`
