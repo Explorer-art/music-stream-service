@@ -23,7 +23,7 @@ pip install -r requirements.txt
 ```
 GET /api/tracks/search?query=Название
 
-HTTP Headers
+HTTP Header
 Authorization: TOKEN
 ```
 
@@ -31,7 +31,7 @@ Authorization: TOKEN
 ```
 POST /api/tracks/upload
 
-HTTP Headers
+HTTP Header
 Authorization: TOKEN
 ```
 
@@ -39,7 +39,7 @@ Authorization: TOKEN
 ```
 DELETE /api/tracks/{track_id}
 
-HTTP Headers
+HTTP Header
 Authorization: TOKEN
 ```
 
@@ -47,7 +47,7 @@ Authorization: TOKEN
 ```
 GET /api/tracks
 
-HTTP Headers
+HTTP Header
 Authorization: TOKEN
 ```
 
