@@ -1,7 +1,7 @@
 import os
 import random
 import asyncio
-from fastapi import FastAPI, Request, Header, File, Form, UploadFile, HTTPException
+from fastapi import FastAPI, Request, Response, Header, File, Form, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -22,7 +22,7 @@ templates = Jinja2Templates(directory="templates")
 
 hitmo = Hitmo()
 
-async def verify_user(user_id):
+async def verify_user(username, password):
 	if not await exists_user_by_username(username):
 		return False
 
@@ -32,6 +32,15 @@ async def verify_user(user_id):
 		return False
 
 	return user
+
+async def verify(token):
+	if not token:
+		raise HTTPException(detail="Unauthorized", status_code=401)
+
+	user_id = await get_current_user_id(token)
+
+	if not await exists_user(int(user_id)):
+		raise HTTPException(detail="Unauthorized", status_code=401)
 
 @app.on_event("startup")
 async def startup():
@@ -51,22 +60,14 @@ async def home_page(request: Request):
 async def login_page(request: Request):
 	return templates.TemplateResponse("login.html", {"request": request})
 
-@app.post("/api/login")
-async def login(request: Request, username = Form(...), password = Form(...)):
-	check = await verify_user(username, password)
-
-	if not check:
-		return JSONResponse({"message": "Wrong username or password"}, status_code=401)
-
-	token = create_access_token({"sub": str(check.id)})
-	return JSONResponse({"token": token})
+@app.get("/api/login")
+def login(response: Response):
+	response.set_cookie(key="user_access_token", value="123", httponly=True)
+	return JSONResponse({"user_access_token": "123"})
 
 @app.get("/admin")
 async def admin_panel(request: Request, authorization: str = Header(None)):
-	user_id = await get_current_user_id(authorization)
-
-	if not await exists_user(int(user_id)):
-		return JSONResponse({"message": "Unauthorized"}, status_code=401)
+	await verify(authorization)
 
 	return templates.TemplateResponse("admin.html", {"request": request})
 

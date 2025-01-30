@@ -44,7 +44,7 @@ async def get_current_user_id(token: str):
 	except JWTError:
 		raise HTTPException(
 			status_code=status.HTTP_401_UNAUTHORIZED,
-			detail="The token is not valid")
+			detail="Unauthorized")
 
 	expire = payload.get("exp")
 	expire_time = datetime.fromtimestamp(int(expire), tz=timezone.utc)
@@ -52,7 +52,7 @@ async def get_current_user_id(token: str):
 	if (not expire) or (expire_time < datetime.now(timezone.utc)):
 		raise HTTPException(
 			status_code=status.HTTP_401_UNAUTHORIZED,
-			detail="The token has expired")
+			detail="Unauthorized")
 
 	user_id = payload.get("sub")
 
