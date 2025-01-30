@@ -34,9 +34,6 @@ pip install -r requirements.txt
 ##### Получить информацию о треке
 `GET /api/tracks/{track_id}`
 
-##### Получить миниатюру картинки трека
-`GET /api/tracks/{track_id}/thumbnail`
-
 ##### Получить картинку трека
 `GET /api/tracks/{track_id}/image`
 
