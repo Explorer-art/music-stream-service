@@ -65,8 +65,21 @@ async def home_page(request: Request, user_access_token: str = Cookie(None)):
 	return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/login")
-async def login_page(request: Request):
+async def login_page(request: Request, user_access_token: str = Cookie(None)):
+	user = await get_current_user(user_access_token)
+
+	if user:
+		return templates.TemplateResponse("index.html", {"request": request})
+
 	return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/logout")
+async def logout(request: Request, response: Response, user_access_token: str = Cookie(None)):
+	user = await get_current_user(user_access_token)
+
+	response = templates.TemplateResponse("login.html", {"request": request})
+	response.delete_cookie(key="user_access_token")
+	return response
 
 @app.get("/admin")
 async def admin_panel(request: Request, user_access_token: str = Cookie(None)):
@@ -89,6 +102,12 @@ async def login(username = Form(...), password = Form(...)):
 
 	token = create_access_token({"sub": str(check.id)})
 	return JSONResponse({"token": token})
+
+@app.get("/api/profile")
+async def profile(request: Request, authorization: str = Header(None)):
+	user = await get_current_user(authorization)
+
+	return JSONResponse({"username": user.username})
 
 @app.post("/api/tracks/upload")
 async def upload_track(file: UploadFile = File(...), authorization: str = Header(None)):

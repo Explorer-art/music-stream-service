@@ -15,11 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': getAuthHeader() // Добавляем Authorization
+                    'Authorization': getAuthHeader()
                 }
             });
             const data = await response.json();
-            tracks = data.tracks; // Сохраняем треки в глобальной переменной
+            tracks = data.tracks;
             displayTracks(tracks, 'tracksList');
         } catch (error) {
             console.error('Ошибка при получении данных:', error);
@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': getAuthHeader() // Добавляем Authorization
+                    'Authorization': getAuthHeader()
                 }
             })
             .then(response => response.json())
@@ -134,21 +134,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    fetch(`http://127.0.0.1:8000/api/profile`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': getAuthHeader()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('username').innerHTML = data.username;
+        })
+    .catch(error => {
+        console.error('Ошибка:', error);
+    });
+
     document.querySelector('.logo').addEventListener('click', () => {
         window.location.href = '/';
     });
 
-    // Функция для получения значения из cookies
     function getCookie(name) {
         const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
         return match ? match[2] : null;
     }
 
-    // Функция для получения заголовка Authorization
     function getAuthHeader() {
         const token = getCookie('user_access_token');
-        return token ? token : '';  // Возвращаем токен или пустую строку, если токен не найден
+        return token ? token : '';
     }
 
-    fetchTracks();  // Загружаем треки при старте страницы
+    fetchTracks();
 });
