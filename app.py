@@ -6,7 +6,6 @@ from fastapi.responses import StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.responses import FileResponse, JSONResponse
-from passlib.context import CryptContext
 from database import *
 from manager import *
 from auth import *
@@ -57,7 +56,12 @@ async def startup():
 	await init_db()
 
 @app.get("/")
-async def home_page(request: Request):
+async def home_page(request: Request, user_access_token: str = Cookie(None)):
+	if user_access_token is None:
+		return templates.TemplateResponse("login.html", {"request": request})
+		
+	user = await get_current_user(user_access_token)
+
 	return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/login")
@@ -68,7 +72,8 @@ async def login_page(request: Request):
 async def admin_panel(request: Request, user_access_token: str = Cookie(None)):
 	user = await get_current_user(user_access_token)
 
-	print(user.permissions_level)
+	if user is None:
+		return templates.TemplateResponse("login.html", {"request": request})
 
 	if user.permissions_level > 0:
 		return JSONResponse({"message": "Access denied"}, status_code=403)

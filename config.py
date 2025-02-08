@@ -5,7 +5,7 @@ load_dotenv()
 
 HOST = "127.0.0.1:8000"
 DATABASE_URL = "postgresql+asyncpg://admin:password@localhost:5432/music"
-MUSIC_DIR = "tracks"
+MUSIC_DIR = "music"
 IMAGES_DIR = "images"
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
 ALGORITHM = "HS256"

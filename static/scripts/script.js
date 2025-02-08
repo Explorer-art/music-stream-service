@@ -151,6 +151,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     fetchTracks();  // Загружаем треки при старте страницы
-
-    console.log(getCookie('user_access_token'))  // Для проверки
 });
