@@ -124,14 +124,13 @@ body {
 }
 
 .logout-button {
-    margin-top: 50px;
-    text-align: center;
     margin-bottom: 40px;
+    text-align: center;
 }
 
 .logout-button a {
     color: #d41b26;
-    font-size: 18px;
+    font-size: 16px;
     text-decoration: none;
     transition: all 0.3s ease;
 }
@@ -165,34 +164,52 @@ body {
 }
 
 .panel {
-    margin-left: 180px;
-    padding: 15px 20px 15px 20px;
+    margin-left: 180px; /* Отступ от sidebar */
+    padding: 15px 20px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start; /* Элементы расположены по левому краю */
     color: #eb5284;
     z-index: 999;
-    flex-grow: 0;
+}
+
+.back {
+    margin-left: 50px;
+}
+
+.forward {
+    margin-right: 15px;
+}
+
+.back, .forward {
+    font-size: 20px;
+    color: #b5b5b5;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back:hover, .forward:hover {
+    color: #fff;
 }
 
 .search {
     flex-grow: 1;
-    margin: 0 5px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    position: relative;
+    margin: 0 10px;
 }
 
 .search input {
     padding: 10px 20px;
-    width: 80%;
     font-size: 18px;
     font-weight: bold;
     background-color: #333;
     color: #fff;
     border: none;
     border-radius: 25px;
+    width: 100%;
     transition: all 0.2s ease;
 }
 
@@ -201,9 +218,22 @@ body {
     border-color: #e0e1dd;
 }
 
+.settings {
+    font-size: 20px;
+    color: #b5b5b5;
+    margin-left: 25px;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+}
+
+.settings:hover {
+    color: #fff;
+}
+
 .content {
+    flex: 1;
     margin-left: 200px;
-    padding: 0 20px 20px 20px;
+    padding: 0 20px 70px 20px;
     height: calc(100vh - 40px);
     overflow: auto;
 }
@@ -224,13 +254,13 @@ body {
 
 .track-item {
     display: flex;
-    align-items: flex-start; /* Выравниваем элементы по верху */
+    align-items: flex-start;
     justify-content: space-between;
     border-radius: 10px;
     overflow: hidden;
     padding: 15px;
     transition: background-color 0.3s ease;
-    background-color: transparent; /* Убираем фоновый цвет */
+    background-color: transparent;
 }
 
 .track-item:hover {
@@ -276,7 +306,33 @@ body {
     gap: 15px;
 }
 
+/* Кастомизация для Chrome, Safari, Edge */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: #2d2d2d;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #444;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}
+
+/* Кастомизация для Firefox */
+html {
+    scrollbar-color: #444 #2d2d2d;
+}
+
 .music-player {
+    padding: 10px;
     display: flex;
     position: fixed;
     bottom: 0;
@@ -286,8 +342,8 @@ body {
     justify-content: space-between;
     color: white;
     background-color: #333;
-    padding: 10px;
     box-sizing: border-box;
+    border-radius: 5px;
     z-index: 9999;
 }
 

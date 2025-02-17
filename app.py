@@ -94,8 +94,8 @@ async def admin_panel(request: Request, user_access_token: str = Cookie(None)):
 	return templates.TemplateResponse("admin.html", {"request": request})
 
 @app.post("/api/login")
-async def login(username = Form(...), password = Form(...)):
-	check = await verify_user(username, password)
+async def login(data=LoginRequest):
+	check = await verify_user(data.username, data.password)
 
 	if not check:
 		return JSONResponse({"message": "Wrong username or password"}, status_code=401)
@@ -108,6 +108,71 @@ async def profile(request: Request, authorization: str = Header(None)):
 	user = await get_current_user(authorization)
 
 	return JSONResponse({"username": user.username})
+
+@app.get("/api/users")
+async def get_users(request: Request, authorization: str = Header(None)):
+	user = await get_current_user(authorization)
+
+	if user.id.permissions_level > 0:
+		raise HTTPException(detail="Forbidden", status_code=403)
+
+	users = await get_users()
+	users_data = []
+
+	for user in users:
+		user_data = {
+			"username": user.username,
+			"avatar": user.avatar,
+			"permissions_level": user.permissions_level
+		}
+
+		users_data.append(user_data)
+
+	return JSONResponse({"users": user_data})
+
+@app.get("/api/users/{user_id}")
+async def get_user(request: Request, user_id: int, authorization: str = Header(None)):
+	user = await get_current_user(authorization)
+
+	if user.id != user_id and user.permissions_level > 0:
+		raise HTTPException(detail="Forbidden", status_code=403)
+
+	if not await exists_user(user_id):
+		return JSONResponse({"message": "User not found"})
+
+	target_user = await get_user(user_id)
+	username = target_user.username
+	avatar = target.avatar
+	permissions_level = target_user.permissions_level
+
+	return JSONResponse({"username": username, "avatar": avatar, "permissions_level": permissions_level})
+
+@app.post("/api/users/{user_id}")
+async def update_user(data: UpdateUser, user_id: int, authorization: str = Header(None)):
+	user = await get_current_user(authorization)
+
+	if user.id != user_id and user.permissions_level > 0:
+		raise HTTPException(detail="Forbidden", status_code=403)
+
+	if not await exists_user(user_id):
+		return JSONResponse({"message": "User not found"})
+
+	if data.permissions_level is not None and user.permissions_level > 0:
+		return JSONResponse({"message": "You don't have enough rights to change the access level"}, status=403)
+
+	username = data.username
+	avatar = data.avatar
+	password = get_password_hash(password)
+	permissions_level = data.permissions_level
+
+	await update_user(user_id,
+		username=username,
+		avatar=avatar,
+		password=password,
+		permissions_level=permissions_level
+		)
+
+	return JSONResponse({"message": "User updated"})
 
 @app.post("/api/tracks/upload")
 async def upload_track(file: UploadFile = File(...), authorization: str = Header(None)):

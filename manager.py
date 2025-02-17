@@ -26,7 +26,7 @@ async def get_user_by_username(session: AsyncSession, username):
 	return user
 
 @connection
-async def add_user(session: AsyncSession, username, password, permissions_level):
+async def add_user(session: AsyncSession, username, avatar, password, permissions_level):
 	if await exists_user(username):
 		return False
 
@@ -34,6 +34,7 @@ async def add_user(session: AsyncSession, username, password, permissions_level)
 
 	user = User(
 		username=username,
+		avatar = avatar,
 		password=password_hash,
 		permissions_level=permissions_level
 		)
@@ -44,7 +45,7 @@ async def add_user(session: AsyncSession, username, password, permissions_level)
 	return user.id
 
 @connection
-async def update_user(session: AsyncSession, user_id, username=None, password_hash=None, permissions_level=None):
+async def update_user(session: AsyncSession, user_id, username=None, avatar=None, password_hash=None, permissions_level=None):
 	user = session.scalar(select(User).filter(User.id == user_id))
 
 	if user is None:
@@ -52,8 +53,10 @@ async def update_user(session: AsyncSession, user_id, username=None, password_ha
 
 	if username is not None:
 		user.username = username
-	if username is not None:
-		user.password_hash = password_hash
+	if avatar is not None:
+		user.avatar = avatar
+	if password is not None:
+		user.password = password_hash
 	if username is not None:
 		user.permissions_level = permissions_level
 
