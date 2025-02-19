@@ -139,6 +139,16 @@ async def api_get_users(request: Request, authorization: str = Header(None)):
 
 	return JSONResponse({"users": user_data})
 
+@app.get("/api/users/me")
+async def api_get_user(request: Request, authorization: str = Header(None)):
+	user = await get_current_user(authorization)
+
+	username = user.username
+	avatar = user.avatar
+	permissions_level = user.permissions_level
+
+	return JSONResponse({"username": username, "avatar": avatar, "permissions_level": permissions_level})
+
 @app.get("/api/users/{user_id}")
 async def api_get_user(request: Request, user_id: int, authorization: str = Header(None)):
 	user = await get_current_user(authorization)
@@ -147,11 +157,11 @@ async def api_get_user(request: Request, user_id: int, authorization: str = Head
 		raise HTTPException(detail="Forbidden", status_code=403)
 
 	if not await exists_user(user_id):
-		return JSONResponse({"message": "User not found"})
+		raise HTTPException(detail="User not found", status_code=404)
 
 	target_user = await get_user(user_id)
 	username = target_user.username
-	avatar = target.avatar
+	avatar = target_user.avatar
 	permissions_level = target_user.permissions_level
 
 	return JSONResponse({"username": username, "avatar": avatar, "permissions_level": permissions_level})
@@ -164,10 +174,10 @@ async def api_update_user(data: UpdateUser, user_id: int, authorization: str = H
 		raise HTTPException(detail="Forbidden", status_code=403)
 
 	if not await exists_user(user_id):
-		return JSONResponse({"message": "User not found"})
+		raise HTTPException(detail="User not found", status_code=404)
 
 	if data.permissions_level is not None and user.permissions_level > 0:
-		return JSONResponse({"message": "You don't have enough rights to change the access level"}, status=403)
+		raise HTTPException(detail="You don't have enough rights to change the access level", status_code=403)
 
 	username = data.username
 	avatar = data.avatar
