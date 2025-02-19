@@ -119,7 +119,7 @@ async def profile(request: Request, authorization: str = Header(None)):
 	return JSONResponse({"username": user.username})
 
 @app.get("/api/users")
-async def get_users(request: Request, authorization: str = Header(None)):
+async def api_get_users(request: Request, authorization: str = Header(None)):
 	user = await get_current_user(authorization)
 
 	if user.id.permissions_level > 0:
@@ -140,7 +140,7 @@ async def get_users(request: Request, authorization: str = Header(None)):
 	return JSONResponse({"users": user_data})
 
 @app.get("/api/users/{user_id}")
-async def get_user(request: Request, user_id: int, authorization: str = Header(None)):
+async def api_get_user(request: Request, user_id: int, authorization: str = Header(None)):
 	user = await get_current_user(authorization)
 
 	if user.id != user_id and user.permissions_level > 0:
@@ -157,7 +157,7 @@ async def get_user(request: Request, user_id: int, authorization: str = Header(N
 	return JSONResponse({"username": username, "avatar": avatar, "permissions_level": permissions_level})
 
 @app.post("/api/users/{user_id}")
-async def update_user(data: UpdateUser, user_id: int, authorization: str = Header(None)):
+async def api_update_user(data: UpdateUser, user_id: int, authorization: str = Header(None)):
 	user = await get_current_user(authorization)
 
 	if user.id != user_id and user.permissions_level > 0:
