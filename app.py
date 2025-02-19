@@ -103,7 +103,7 @@ async def admin_panel(request: Request, user_access_token: str = Cookie(None)):
 	return templates.TemplateResponse("admin.html", {"request": request})
 
 @app.post("/api/login")
-async def login(data=LoginRequest):
+async def login(data: LoginRequest):
 	check = await verify_user(data.username, data.password)
 
 	if not check:
