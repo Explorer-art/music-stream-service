@@ -17,6 +17,14 @@ from config import *
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+app.add_middleware(
+	CORSMiddleware,
+	allow_origins=["*"],
+	allow_credentials=True,
+	allow_methods=["*"],
+	allow_headers=["*"]
+)
+
 templates = Jinja2Templates(directory="templates")
 
 hitmo = Hitmo()
