@@ -26,16 +26,14 @@ async def get_user_by_username(session: AsyncSession, username):
 	return user
 
 @connection
-async def add_user(session: AsyncSession, username, avatar, password, permissions_level):
+async def create_user(session: AsyncSession, username, password, avatar=None, permissions_level=1):
 	if await exists_user(username):
 		return False
-
-	password_hash = get_password_hash(password)
 
 	user = User(
 		username=username,
 		avatar = avatar,
-		password=password_hash,
+		password=get_password_hash(password),
 		permissions_level=permissions_level
 		)
 

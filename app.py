@@ -62,6 +62,9 @@ async def startup():
 	if not os.path.exists(IMAGES_DIR):
 		os.mkdir(IMAGES_DIR)
 
+	if not os.path.exists(f"{IMAGES_DIR}/avatars"):
+		os.mkdir(f"{IMAGES_DIR}/avatars")
+
 	await init_db()
 
 @app.get("/")
@@ -102,7 +105,7 @@ async def admin_panel(request: Request, user_access_token: str = Cookie(None)):
 
 	return templates.TemplateResponse("admin.html", {"request": request})
 
-@app.post("/api/login")
+@app.post("/api/users/login")
 async def login(data: LoginRequest):
 	check = await verify_user(data.username, data.password)
 
@@ -112,18 +115,32 @@ async def login(data: LoginRequest):
 	token = create_access_token({"sub": str(check.id)})
 	return JSONResponse({"token": token})
 
-@app.get("/api/profile")
-async def profile(request: Request, authorization: str = Header(None)):
+@app.post("/api/users/register")
+async def register(data: RegisterRequest, authorization: str = Header(None)):
 	user = await get_current_user(authorization)
 
-	return JSONResponse({"username": user.username})
+	if user.permissions_level > 0:
+		raise HTTPException(detail="You don't have permissions", status_code=403)
+
+	if len(data.username) >= 3 and len(data.username) <= 32:
+		raise HTTPException(detail="The username must be at least 3 characters long and no more than 32 characters long.", status_code=400)
+
+	if await exists_user_by_username(data.username):
+		raise HTTPException(detail="Username already registered", status_code=400)
+
+	user_id = await create_user(data.username, data.password)
+
+	if not user_id:
+		raise HTTPException(detail="Error registration", status_code=500)
+
+	return JSONResponse({"user_id": user_id})
 
 @app.get("/api/users")
 async def api_get_users(request: Request, authorization: str = Header(None)):
 	user = await get_current_user(authorization)
 
 	if user.id.permissions_level > 0:
-		raise HTTPException(detail="Forbidden", status_code=403)
+		raise HTTPException(detail="You don't have permissions", status_code=403)
 
 	users = await get_users()
 	users_data = []
@@ -150,11 +167,11 @@ async def api_get_user(request: Request, authorization: str = Header(None)):
 	return JSONResponse({"username": username, "avatar": avatar, "permissions_level": permissions_level})
 
 @app.get("/api/users/{user_id}")
-async def api_get_user(request: Request, user_id: int, authorization: str = Header(None)):
+async def api_get_user(request: Request, authorization: str = Header(None), user_id: int):
 	user = await get_current_user(authorization)
 
 	if user.id != user_id and user.permissions_level > 0:
-		raise HTTPException(detail="Forbidden", status_code=403)
+		raise HTTPException(detail="You don't have permissions", status_code=403)
 
 	if not await exists_user(user_id):
 		raise HTTPException(detail="User not found", status_code=404)
@@ -167,11 +184,11 @@ async def api_get_user(request: Request, user_id: int, authorization: str = Head
 	return JSONResponse({"username": username, "avatar": avatar, "permissions_level": permissions_level})
 
 @app.post("/api/users/{user_id}")
-async def api_update_user(data: UpdateUser, user_id: int, authorization: str = Header(None)):
+async def api_update_user(data: UpdateUser, authorization: str = Header(None), user_id: int):
 	user = await get_current_user(authorization)
 
 	if user.id != user_id and user.permissions_level > 0:
-		raise HTTPException(detail="Forbidden", status_code=403)
+		raise HTTPException(detail="You don't have permissions", status_code=403)
 
 	if not await exists_user(user_id):
 		raise HTTPException(detail="User not found", status_code=404)
@@ -192,6 +209,26 @@ async def api_update_user(data: UpdateUser, user_id: int, authorization: str = H
 		)
 
 	return JSONResponse({"message": "User updated"})
+
+@app.get("/api/users/me/avatar")
+async def get_me_avatar(request: Request, authorization: str = Header(None)):
+	user = await get_current_user(authorization)
+
+	return FileReponse(f"{IMAGES_DIR}/avatars/{user.avatar}")
+
+@app.get("/api/users/{user_id}/avatar")
+async def get_me_avatar(request: Request, authorization: str = Header(None), user_id: int):
+	user = await get_current_user(authorization)
+
+	if user.id != user_id and user.permissions_level > 0:
+		raise HTTPException(detail="You don't have permissions", status_code=403)
+
+	if not await exists_user(user_id):
+		raise HTTPException(detail="User not found", status_code=404)
+
+	target_user = await get_user(user_id)
+
+	return FileReponse(f"{IMAGES_DIR}/avatars/{target.avatar}")
 
 @app.post("/api/tracks/upload")
 async def upload_track(file: UploadFile = File(...), authorization: str = Header(None)):
